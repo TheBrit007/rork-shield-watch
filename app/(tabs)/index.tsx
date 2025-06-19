@@ -26,9 +26,14 @@ if (Platform.OS !== 'web') {
   MapMarker = MapMarkerComponent.MapMarker;
 }
 
+// Define MapViewType for proper typing of the ref
+type MapViewType = {
+  animateToRegion: (region: Coordinates, duration: number) => void;
+};
+
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef(null);
+  const mapRef = useRef<MapViewType | null>(null);
   const [showList, setShowList] = useState(Platform.OS === 'web');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   
