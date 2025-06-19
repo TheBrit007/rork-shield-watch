@@ -1,21 +1,35 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Platform, Alert, Dimensions } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { useReportStore } from '@/store/reportStore';
 import { useUserStore } from '@/store/userStore';
-import { MapMarker } from '@/components/MapMarker';
 import { ReportCard } from '@/components/ReportCard';
 import { RemainingPostsIndicator } from '@/components/RemainingPostsIndicator';
 import Colors from '@/constants/colors';
 import { Coordinates } from '@/types';
 import { MapPin, List, Layers, Plus } from 'lucide-react-native';
 
+// Only import MapView and related components for non-web platforms
+let MapView: any;
+let Marker: any;
+let PROVIDER_GOOGLE: any;
+let MapMarker: any;
+
+if (Platform.OS !== 'web') {
+  const MapComponents = require('react-native-maps');
+  MapView = MapComponents.default;
+  Marker = MapComponents.Marker;
+  PROVIDER_GOOGLE = MapComponents.PROVIDER_GOOGLE;
+  
+  const MapMarkerComponent = require('@/components/MapMarker');
+  MapMarker = MapMarkerComponent.MapMarker;
+}
+
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef<MapView>(null);
-  const [showList, setShowList] = useState(false);
+  const mapRef = useRef(null);
+  const [showList, setShowList] = useState(Platform.OS === 'web');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   
   const { 
@@ -55,7 +69,7 @@ export default function MapScreen() {
     selectReport(reportId);
     
     const report = reports.find(r => r.id === reportId);
-    if (report && mapRef.current) {
+    if (report && mapRef.current && Platform.OS !== 'web') {
       mapRef.current.animateToRegion({
         latitude: report.latitude,
         longitude: report.longitude,
@@ -79,7 +93,7 @@ export default function MapScreen() {
       return;
     }
     
-    if (mapRef.current) {
+    if (mapRef.current && Platform.OS !== 'web') {
       mapRef.current.animateToRegion(userLocation, 500);
     }
   };
