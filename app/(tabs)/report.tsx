@@ -29,29 +29,41 @@ export default function ReportScreen() {
   } = useUserStore();
 
   useEffect(() => {
-    (async () => {
+    const getLocation = async () => {
       setIsLoading(true);
       
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        setLocationError('Permission to access location was denied');
-        setIsLoading(false);
-        return;
-      }
-      
       try {
-        const location = await Location.getCurrentPositionAsync({});
-        setLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        
+        if (status !== 'granted') {
+          setLocationError('Permission to access location was denied');
+          setIsLoading(false);
+          return;
+        }
+        
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000,
+          });
+          
+          setLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        } catch (error) {
+          console.error('Error getting location:', error);
+          setLocationError('Could not determine your location. Please try again.');
+        }
       } catch (error) {
-        setLocationError('Could not determine your location');
+        console.error('Error requesting location permissions:', error);
+        setLocationError('Error accessing location services. Please check your device settings.');
       } finally {
         setIsLoading(false);
       }
-    })();
+    };
+
+    getLocation();
   }, []);
 
   const handleSubmit = (agencyId: string, description: string, media: MediaItem[]) => {
@@ -68,28 +80,36 @@ export default function ReportScreen() {
     // Create the report
     const newReportId = `report-${Date.now()}`;
     
-    addReport({
-      agencyId,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      description,
-      media,
-      userId: user?.id,
-      username: isAuthenticated ? user?.username : 'Anonymous User',
-    });
-    
-    // Track the post
-    if (isAuthenticated) {
-      addPost();
-    } else {
-      addAnonymousPost(newReportId);
+    try {
+      addReport({
+        agencyId,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        description,
+        media,
+        userId: user?.id,
+        username: isAuthenticated ? user?.username : 'Anonymous User',
+      });
+      
+      // Track the post
+      if (isAuthenticated) {
+        addPost();
+      } else {
+        addAnonymousPost(newReportId);
+      }
+      
+      Alert.alert(
+        'Report Submitted',
+        'Thank you for your report. It has been added to the map.',
+        [{ text: 'OK', onPress: () => router.push('/') }]
+      );
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      Alert.alert(
+        'Error',
+        'There was a problem submitting your report. Please try again.'
+      );
     }
-    
-    Alert.alert(
-      'Report Submitted',
-      'Thank you for your report. It has been added to the map.',
-      [{ text: 'OK', onPress: () => router.push('/') }]
-    );
   };
 
   const handleCancel = () => {

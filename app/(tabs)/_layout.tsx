@@ -2,6 +2,7 @@ import React from "react";
 import { Tabs } from "expo-router";
 import Colors from "@/constants/colors";
 import { MapPin, Plus, Settings } from "lucide-react-native";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -17,6 +18,8 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        // Disable animation on Android to prevent potential crashes
+        animationEnabled: Platform.OS !== 'android',
       }}
     >
       <Tabs.Screen

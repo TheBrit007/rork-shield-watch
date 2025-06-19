@@ -1,9 +1,11 @@
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import { View, Text, StyleSheet } from "react-native";
 import { useUserStore } from "@/store/userStore";
+import Colors from "@/constants/colors";
 
 export const unstable_settings = {
   initialRouteName: "welcome",
@@ -16,23 +18,43 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({});
   const router = useRouter();
   const { hasSeenWelcome } = useUserStore();
+  const [appError, setAppError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (error) {
-      console.error(error);
+      console.error("Font loading error:", error);
+      setAppError(error);
     }
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-      
-      // If user has seen welcome screen, redirect to main app
-      if (hasSeenWelcome) {
-        router.replace('/(tabs)');
+    const hideSpashAndNavigate = async () => {
+      try {
+        if (loaded) {
+          await SplashScreen.hideAsync();
+          
+          // If user has seen welcome screen, redirect to main app
+          if (hasSeenWelcome) {
+            router.replace('/(tabs)');
+          }
+        }
+      } catch (e) {
+        console.error("Navigation error:", e);
+        setAppError(e instanceof Error ? e : new Error(String(e)));
       }
-    }
-  }, [loaded, hasSeenWelcome]);
+    };
+
+    hideSpashAndNavigate();
+  }, [loaded, hasSeenWelcome, router]);
+
+  if (appError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+        <Text style={styles.errorMessage}>{appError.message}</Text>
+      </View>
+    );
+  }
 
   if (!loaded) {
     return null;
@@ -77,3 +99,24 @@ function RootLayoutNav() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: Colors.background,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.danger,
+    marginBottom: 10,
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'center',
+  }
+});

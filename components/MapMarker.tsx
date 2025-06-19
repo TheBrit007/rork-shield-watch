@@ -39,24 +39,35 @@ export const MapMarker: React.FC<MapMarkerProps> = ({ report, isSelected }) => {
     return null;
   }
   
-  const agency = agencies.find((a) => a.id === report.agencyId);
-  
-  return (
-    <View style={styles.container}>
-      <View 
-        style={[
-          styles.marker, 
-          { backgroundColor: agency?.color || Colors.primary },
-          isSelected && styles.selectedMarker,
-        ]}
-      >
-        {isSelected ? (
-          getAgencyIcon(agency?.icon || 'shield', '#FFFFFF', 16)
-        ) : null}
+  try {
+    const agency = agencies.find((a) => a.id === report.agencyId);
+    const agencyColor = agency?.color || Colors.primary;
+    
+    return (
+      <View style={styles.container}>
+        <View 
+          style={[
+            styles.marker, 
+            { backgroundColor: agencyColor },
+            isSelected && styles.selectedMarker,
+          ]}
+        >
+          {isSelected ? (
+            getAgencyIcon(agency?.icon || 'shield', '#FFFFFF', 16)
+          ) : null}
+        </View>
+        {isSelected && <View style={styles.shadow} />}
       </View>
-      {isSelected && <View style={styles.shadow} />}
-    </View>
-  );
+    );
+  } catch (error) {
+    console.error('Error rendering map marker:', error);
+    // Return a simple fallback marker
+    return (
+      <View style={styles.container}>
+        <View style={[styles.marker, { backgroundColor: Colors.primary }]} />
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({

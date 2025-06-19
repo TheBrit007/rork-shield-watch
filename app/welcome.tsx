@@ -4,10 +4,10 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  Image, 
   ScrollView,
   useWindowDimensions,
-  Platform
+  Platform,
+  SafeAreaView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -22,12 +22,26 @@ export default function WelcomeScreen() {
   
   useEffect(() => {
     // Initialize device ID for anonymous users
-    initializeDeviceId();
+    const init = async () => {
+      try {
+        await initializeDeviceId();
+      } catch (error) {
+        console.error('Error initializing device ID:', error);
+      }
+    };
+    
+    init();
   }, []);
   
   const handleContinueAsGuest = () => {
-    setHasSeenWelcome(true);
-    router.replace('/');
+    try {
+      setHasSeenWelcome(true);
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Error navigating as guest:', error);
+      // Fallback navigation
+      router.replace('/');
+    }
   };
   
   const handleLogin = () => {
@@ -39,7 +53,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
@@ -141,11 +155,15 @@ export default function WelcomeScreen() {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -153,7 +171,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     padding: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 20 : 40,
   },
   header: {
     alignItems: 'center',

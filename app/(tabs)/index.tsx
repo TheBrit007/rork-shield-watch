@@ -17,25 +17,25 @@ let PROVIDER_GOOGLE: any;
 let MapMarker: any;
 
 if (Platform.OS !== 'web') {
-  const MapComponents = require('react-native-maps');
-  MapView = MapComponents.default;
-  Marker = MapComponents.Marker;
-  PROVIDER_GOOGLE = MapComponents.PROVIDER_GOOGLE;
-  
-  const MapMarkerComponent = require('@/components/MapMarker');
-  MapMarker = MapMarkerComponent.MapMarker;
+  try {
+    const MapComponents = require('react-native-maps');
+    MapView = MapComponents.default;
+    Marker = MapComponents.Marker;
+    PROVIDER_GOOGLE = MapComponents.PROVIDER_GOOGLE;
+    
+    const MapMarkerComponent = require('@/components/MapMarker');
+    MapMarker = MapMarkerComponent.MapMarker;
+  } catch (error) {
+    console.error('Error loading map components:', error);
+  }
 }
-
-// Define MapViewType for proper typing of the ref
-type MapViewType = {
-  animateToRegion: (region: Coordinates, duration: number) => void;
-};
 
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef<MapViewType | null>(null);
+  const mapRef = useRef(null);
   const [showList, setShowList] = useState(Platform.OS === 'web');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
   
   const { 
     reports, 
@@ -51,23 +51,39 @@ export default function MapScreen() {
   const { isAuthenticated, canPost, getRemainingPosts } = useUserStore();
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status === 'granted');
-      
-      if (status === 'granted') {
-        const location = await Location.getCurrentPositionAsync({});
-        const userCoords: Coordinates = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        };
+    const initializeLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationPermission(status === 'granted');
         
-        setUserLocation(userCoords);
-        setMapRegion(userCoords);
+        if (status === 'granted') {
+          try {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 5000,
+            });
+            
+            const userCoords: Coordinates = {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            };
+            
+            setUserLocation(userCoords);
+            setMapRegion(userCoords);
+          } catch (locationError) {
+            console.error('Error getting location:', locationError);
+            // Don't set an error message here, just use default location
+          }
+        }
+      } catch (error) {
+        console.error('Error requesting location permissions:', error);
+        setMapError('Unable to access location services. Please check your permissions.');
       }
-    })();
+    };
+
+    initializeLocation();
   }, []);
 
   const handleMarkerPress = (reportId: string) => {
@@ -75,12 +91,17 @@ export default function MapScreen() {
     
     const report = reports.find(r => r.id === reportId);
     if (report && mapRef.current && Platform.OS !== 'web') {
-      mapRef.current.animateToRegion({
-        latitude: report.latitude,
-        longitude: report.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      }, 500);
+      try {
+        // Use optional chaining to safely call animateToRegion
+        (mapRef.current as any)?.animateToRegion?.({
+          latitude: report.latitude,
+          longitude: report.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        }, 500);
+      } catch (error) {
+        console.error('Error animating map:', error);
+      }
     }
   };
 
@@ -99,7 +120,12 @@ export default function MapScreen() {
     }
     
     if (mapRef.current && Platform.OS !== 'web') {
-      mapRef.current.animateToRegion(userLocation, 500);
+      try {
+        // Use optional chaining to safely call animateToRegion
+        (mapRef.current as any)?.animateToRegion?.(userLocation, 500);
+      } catch (error) {
+        console.error('Error animating to user location:', error);
+      }
     }
   };
   
@@ -110,9 +136,12 @@ export default function MapScreen() {
   const selectedReport = reports.find(r => r.id === selectedReportId);
   const remainingPosts = getRemainingPosts();
 
+  // If there's a map error or we're on web, always show the list view
+  const shouldShowList = showList || Platform.OS === 'web' || !!mapError;
+
   return (
     <View style={styles.container}>
-      {Platform.OS !== 'web' ? (
+      {Platform.OS !== 'web' && !mapError && MapView ? (
         <MapView
           ref={mapRef}
           style={styles.map}
@@ -131,18 +160,19 @@ export default function MapScreen() {
               }}
               onPress={() => handleMarkerPress(report.id)}
             >
-              <MapMarker 
-                report={report} 
-                isSelected={report.id === selectedReportId} 
-              />
+              {MapMarker && (
+                <MapMarker 
+                  report={report} 
+                  isSelected={report.id === selectedReportId} 
+                />
+              )}
             </Marker>
           ))}
         </MapView>
       ) : (
         <View style={styles.webMapFallback}>
           <Text style={styles.webMapText}>
-            Map view is not available on web.
-            Please use the list view to see reports.
+            {mapError || "Map view is not available. Please use the list view to see reports."}
           </Text>
           <TouchableOpacity 
             style={styles.webListButton}
@@ -161,7 +191,7 @@ export default function MapScreen() {
             style={styles.listButton}
             onPress={() => setShowList(!showList)}
           >
-            {showList ? (
+            {shouldShowList ? (
               <Layers size={24} color={Colors.text} />
             ) : (
               <List size={24} color={Colors.text} />
@@ -169,13 +199,13 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
 
-        {remainingPosts !== Infinity && remainingPosts < 3 && !showList && (
+        {remainingPosts !== Infinity && remainingPosts < 3 && !shouldShowList && (
           <View style={styles.anonymousIndicator}>
             <RemainingPostsIndicator compact />
           </View>
         )}
 
-        {showList && (
+        {shouldShowList && (
           <View style={styles.listContainer}>
             <Text style={styles.listTitle}>Recent Reports</Text>
             <View style={styles.reportsList}>
@@ -192,7 +222,7 @@ export default function MapScreen() {
           </View>
         )}
 
-        {selectedReport && !showList && Platform.OS !== 'web' && (
+        {selectedReport && !shouldShowList && Platform.OS !== 'web' && (
           <View style={styles.selectedReportContainer}>
             <ReportCard
               report={selectedReport}
@@ -202,7 +232,7 @@ export default function MapScreen() {
           </View>
         )}
 
-        {!showList && Platform.OS !== 'web' && (
+        {!shouldShowList && Platform.OS !== 'web' && (
           <>
             <TouchableOpacity 
               style={styles.locationButton}
