@@ -18,8 +18,8 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: '600',
         },
-        // Disable animation on Android to prevent potential crashes
-        animationEnabled: Platform.OS !== 'android',
+        // Use animation property instead of animationEnabled
+        ...(Platform.OS === 'android' ? { animation: 'none' } : {})
       }}
     >
       <Tabs.Screen
