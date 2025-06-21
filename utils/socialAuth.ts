@@ -35,16 +35,23 @@ export interface SocialAuthResponse {
  */
 export const signInWithGoogle = async (): Promise<SocialAuthResponse> => {
   try {
-    // Configure Google auth request
-    const [request, response, promptAsync] = Google.useAuthRequest({
-      clientId: GOOGLE_CLIENT_ID_WEB,
-      iosClientId: GOOGLE_CLIENT_ID_IOS,
-      androidClientId: GOOGLE_CLIENT_ID_ANDROID,
-      webClientId: GOOGLE_CLIENT_ID_WEB,
+    // Use the non-hook based approach for Google authentication
+    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    
+    const authRequest = new AuthSession.AuthRequest({
+      clientId: Platform.select({
+        ios: GOOGLE_CLIENT_ID_IOS,
+        android: GOOGLE_CLIENT_ID_ANDROID,
+        default: GOOGLE_CLIENT_ID_WEB,
+      }) || GOOGLE_CLIENT_ID_WEB,
+      redirectUri,
+      responseType: AuthSession.ResponseType.Token,
+      scopes: ['profile', 'email'],
     });
 
-    // Prompt user to authenticate
-    const result = await promptAsync();
+    const result = await authRequest.promptAsync(
+      { useProxy: true, authUrl: 'https://accounts.google.com/o/oauth2/v2/auth' }
+    );
 
     if (result.type === 'success' && result.authentication) {
       // Get user info using the access token
@@ -117,7 +124,7 @@ export const signInWithApple = async (): Promise<SocialAuthResponse> => {
   } catch (e) {
     // Handle error
     const error = e as Error;
-    if ('code' in error && error.code === 'ERR_CANCELED') {
+    if ('code' in error && (error as any).code === 'ERR_CANCELED') {
       return {
         success: false,
         error: 'Apple sign in was cancelled',

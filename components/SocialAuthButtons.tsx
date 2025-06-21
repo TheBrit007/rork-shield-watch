@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/userStore';
 
@@ -13,9 +13,12 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
   onError,
 }) => {
   const { loginWithGoogle, loginWithApple } = useUserStore();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
+      setIsGoogleLoading(true);
       const success = await loginWithGoogle();
       if (success) {
         onSuccess?.();
@@ -25,11 +28,14 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
     } catch (error) {
       console.error('Google login error:', error);
       onError?.(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
     try {
+      setIsAppleLoading(true);
       const success = await loginWithApple();
       if (success) {
         onSuccess?.();
@@ -39,6 +45,8 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
     } catch (error) {
       console.error('Apple login error:', error);
       onError?.(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setIsAppleLoading(false);
     }
   };
 
@@ -53,22 +61,36 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
       <TouchableOpacity
         style={styles.googleButton}
         onPress={handleGoogleLogin}
+        disabled={isGoogleLoading}
       >
-        <View style={styles.googleIconContainer}>
-          <Text style={styles.googleIcon}>G</Text>
-        </View>
-        <Text style={styles.buttonText}>Continue with Google</Text>
+        {isGoogleLoading ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <>
+            <View style={styles.googleIconContainer}>
+              <Text style={styles.googleIcon}>G</Text>
+            </View>
+            <Text style={styles.buttonText}>Continue with Google</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       {Platform.OS === 'ios' && (
         <TouchableOpacity
           style={styles.appleButton}
           onPress={handleAppleLogin}
+          disabled={isAppleLoading}
         >
-          <View style={styles.appleIconContainer}>
-            <Text style={styles.appleIcon}>🍎</Text>
-          </View>
-          <Text style={styles.appleButtonText}>Continue with Apple</Text>
+          {isAppleLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <View style={styles.appleIconContainer}>
+                <Text style={styles.appleIcon}>🍎</Text>
+              </View>
+              <Text style={styles.appleButtonText}>Continue with Apple</Text>
+            </>
+          )}
         </TouchableOpacity>
       )}
     </View>
@@ -105,6 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 12,
     marginBottom: 12,
+    minHeight: 48,
   },
   googleIconContainer: {
     width: 24,
@@ -132,6 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 8,
     paddingVertical: 12,
+    minHeight: 48,
   },
   appleIconContainer: {
     width: 24,
