@@ -32,7 +32,7 @@ if (Platform.OS !== 'web') {
 
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef(null);
+  const mapRef = useRef<any>(null);
   const [showList, setShowList] = useState(Platform.OS === 'web');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function MapScreen() {
     if (report && mapRef.current && Platform.OS !== 'web') {
       try {
         // Use optional chaining to safely call animateToRegion
-        (mapRef.current as any)?.animateToRegion?.({
+        mapRef.current?.animateToRegion?.({
           latitude: report.latitude,
           longitude: report.longitude,
           latitudeDelta: 0.02,
@@ -122,7 +122,7 @@ export default function MapScreen() {
     if (mapRef.current && Platform.OS !== 'web') {
       try {
         // Use optional chaining to safely call animateToRegion
-        (mapRef.current as any)?.animateToRegion?.(userLocation, 500);
+        mapRef.current?.animateToRegion?.(userLocation, 500);
       } catch (error) {
         console.error('Error animating to user location:', error);
       }
