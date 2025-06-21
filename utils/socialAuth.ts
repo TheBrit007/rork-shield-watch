@@ -36,7 +36,7 @@ export interface SocialAuthResponse {
 export const signInWithGoogle = async (): Promise<SocialAuthResponse> => {
   try {
     // Use the non-hook based approach for Google authentication
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    const redirectUri = AuthSession.makeRedirectUri();
     
     const authRequest = new AuthSession.AuthRequest({
       clientId: Platform.select({
@@ -50,7 +50,7 @@ export const signInWithGoogle = async (): Promise<SocialAuthResponse> => {
     });
 
     const result = await authRequest.promptAsync(
-      { useProxy: true, authUrl: 'https://accounts.google.com/o/oauth2/v2/auth' }
+      { authUrl: 'https://accounts.google.com/o/oauth2/v2/auth' }
     );
 
     if (result.type === 'success' && result.authentication) {
