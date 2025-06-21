@@ -18,7 +18,7 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: '600',
         },
-        // Use animation property instead of animationEnabled
+        // Use animation property for Android
         ...(Platform.OS === 'android' ? { animation: 'none' } : {})
       }}
     >

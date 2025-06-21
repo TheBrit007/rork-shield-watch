@@ -10,6 +10,7 @@ interface MapMarkerProps {
   isSelected: boolean;
 }
 
+// Only define this component for non-web platforms
 const getAgencyIcon = (iconName: string, color: string, size: number) => {
   switch (iconName) {
     case 'shield':
@@ -33,6 +34,7 @@ const getAgencyIcon = (iconName: string, color: string, size: number) => {
   }
 };
 
+// This component should only be used on native platforms
 export const MapMarker: React.FC<MapMarkerProps> = ({ report, isSelected }) => {
   // Web doesn't support native map markers properly
   if (Platform.OS === 'web') {

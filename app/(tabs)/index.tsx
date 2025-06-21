@@ -11,20 +11,21 @@ import { Coordinates } from '@/types';
 import { MapPin, List, Layers, Plus } from 'lucide-react-native';
 
 // Only import MapView and related components for non-web platforms
-let MapView: any;
-let Marker: any;
-let PROVIDER_GOOGLE: any;
-let MapMarker: any;
+let MapView: any = null;
+let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+let MapMarker: any = null;
 
 if (Platform.OS !== 'web') {
   try {
+    // Dynamic import to prevent web from trying to load these modules
     const MapComponents = require('react-native-maps');
     MapView = MapComponents.default;
     Marker = MapComponents.Marker;
     PROVIDER_GOOGLE = MapComponents.PROVIDER_GOOGLE;
     
-    const MapMarkerComponent = require('@/components/MapMarker');
-    MapMarker = MapMarkerComponent.MapMarker;
+    const MapMarkerComponent = require('@/components/MapMarker').MapMarker;
+    MapMarker = MapMarkerComponent;
   } catch (error) {
     console.error('Error loading map components:', error);
   }
@@ -32,7 +33,7 @@ if (Platform.OS !== 'web') {
 
 export default function MapScreen() {
   const router = useRouter();
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef(null);
   const [showList, setShowList] = useState(Platform.OS === 'web');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -90,15 +91,18 @@ export default function MapScreen() {
     selectReport(reportId);
     
     const report = reports.find(r => r.id === reportId);
-    if (report && mapRef.current && Platform.OS !== 'web') {
+    if (report && mapRef.current && Platform.OS !== 'web' && MapView) {
       try {
-        // Use optional chaining to safely call animateToRegion
-        mapRef.current?.animateToRegion?.({
-          latitude: report.latitude,
-          longitude: report.longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        }, 500);
+        // Safely access animateToRegion with optional chaining
+        const map = mapRef.current as any;
+        if (map && typeof map.animateToRegion === 'function') {
+          map.animateToRegion({
+            latitude: report.latitude,
+            longitude: report.longitude,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          }, 500);
+        }
       } catch (error) {
         console.error('Error animating map:', error);
       }
@@ -119,10 +123,13 @@ export default function MapScreen() {
       return;
     }
     
-    if (mapRef.current && Platform.OS !== 'web') {
+    if (mapRef.current && Platform.OS !== 'web' && MapView) {
       try {
-        // Use optional chaining to safely call animateToRegion
-        mapRef.current?.animateToRegion?.(userLocation, 500);
+        // Safely access animateToRegion with optional chaining
+        const map = mapRef.current as any;
+        if (map && typeof map.animateToRegion === 'function') {
+          map.animateToRegion(userLocation, 500);
+        }
       } catch (error) {
         console.error('Error animating to user location:', error);
       }
