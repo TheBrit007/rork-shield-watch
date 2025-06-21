@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useUserStore } from '@/store/userStore';
 import Colors from '@/constants/colors';
 import { Eye, EyeOff, UserPlus, Shield } from 'lucide-react-native';
+import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -65,6 +66,15 @@ export default function RegisterScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSocialAuthSuccess = () => {
+    setHasSeenWelcome(true);
+    router.replace('/');
+  };
+
+  const handleSocialAuthError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
   return (
@@ -196,6 +206,11 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
           </View>
+          
+          <SocialAuthButtons 
+            onSuccess={handleSocialAuthSuccess}
+            onError={handleSocialAuthError}
+          />
           
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account?</Text>

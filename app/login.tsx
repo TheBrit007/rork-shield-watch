@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useUserStore } from '@/store/userStore';
 import Colors from '@/constants/colors';
 import { Eye, EyeOff, LogIn, Shield } from 'lucide-react-native';
+import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -76,6 +77,15 @@ export default function LoginScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSocialAuthSuccess = () => {
+    setHasSeenWelcome(true);
+    router.replace('/');
+  };
+
+  const handleSocialAuthError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
   return (
@@ -171,6 +181,11 @@ export default function LoginScreen() {
               <Text style={styles.demoButtonText}>Use Demo Account</Text>
             </TouchableOpacity>
           </View>
+          
+          <SocialAuthButtons 
+            onSuccess={handleSocialAuthSuccess}
+            onError={handleSocialAuthError}
+          />
           
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account?</Text>

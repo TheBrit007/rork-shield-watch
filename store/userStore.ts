@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { Subscription, SubscriptionTier } from '@/types';
+import { signInWithGoogle, signInWithApple, SocialAuthResponse } from '@/utils/socialAuth';
 
 export interface User {
   id: string;
@@ -12,6 +13,7 @@ export interface User {
   createdAt: number;
   subscription: Subscription;
   postsThisMonth: number;
+  authProvider?: 'email' | 'google' | 'apple';
 }
 
 export interface AnonymousPost {
@@ -28,6 +30,8 @@ interface UserState {
   
   login: (email: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
+  loginWithApple: () => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
   initializeDeviceId: () => Promise<void>;
@@ -58,6 +62,7 @@ const MOCK_USERS = [
       startDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
     },
     postsThisMonth: 3,
+    authProvider: 'email',
   },
   {
     id: '2',
@@ -74,6 +79,7 @@ const MOCK_USERS = [
       paymentMethod: 'Google Pay',
     },
     postsThisMonth: 25,
+    authProvider: 'email',
   }
 ];
 
@@ -210,6 +216,7 @@ export const useUserStore = create<UserState>()(
               startDate: Date.now(),
             },
             postsThisMonth: 0,
+            authProvider: 'email',
           };
           
           set({ 
@@ -220,6 +227,85 @@ export const useUserStore = create<UserState>()(
           return true;
         } catch (error) {
           console.error('Registration error:', error);
+          return false;
+        }
+      },
+      
+      loginWithGoogle: async () => {
+        try {
+          const response = await signInWithGoogle();
+          
+          if (response.success && response.userData) {
+            // In a real app, you would check if this Google user exists in your database
+            // and either log them in or create a new account
+            
+            // For this demo, we'll create a new user
+            const { id, email, name, picture } = response.userData;
+            
+            const newUser: User = {
+              id: `google-${id}`,
+              username: name || `user-${id.substring(0, 8)}`,
+              email: email || `${id}@example.com`,
+              avatar: picture,
+              createdAt: Date.now(),
+              subscription: {
+                tier: 'free',
+                startDate: Date.now(),
+              },
+              postsThisMonth: 0,
+              authProvider: 'google',
+            };
+            
+            set({
+              user: newUser,
+              isAuthenticated: true,
+            });
+            
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          console.error('Google login error:', error);
+          return false;
+        }
+      },
+      
+      loginWithApple: async () => {
+        try {
+          const response = await signInWithApple();
+          
+          if (response.success && response.userData) {
+            // In a real app, you would check if this Apple user exists in your database
+            // and either log them in or create a new account
+            
+            // For this demo, we'll create a new user
+            const { id, email, name } = response.userData;
+            
+            const newUser: User = {
+              id: `apple-${id}`,
+              username: name || `user-${id.substring(0, 8)}`,
+              email: email || `${id}@example.com`,
+              createdAt: Date.now(),
+              subscription: {
+                tier: 'free',
+                startDate: Date.now(),
+              },
+              postsThisMonth: 0,
+              authProvider: 'apple',
+            };
+            
+            set({
+              user: newUser,
+              isAuthenticated: true,
+            });
+            
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          console.error('Apple login error:', error);
           return false;
         }
       },

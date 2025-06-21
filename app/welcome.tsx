@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useUserStore } from '@/store/userStore';
 import Colors from '@/constants/colors';
 import { LogIn, UserPlus, Eye, Shield } from 'lucide-react-native';
+import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -50,6 +51,17 @@ export default function WelcomeScreen() {
   
   const handleSignUp = () => {
     router.push('/register');
+  };
+
+  const handleSocialAuthSuccess = () => {
+    setHasSeenWelcome(true);
+    router.replace('/(tabs)');
+  };
+
+  const handleSocialAuthError = (error: string) => {
+    console.error('Social auth error:', error);
+    // We could show an alert here, but for the welcome screen
+    // we'll just log the error and let the user continue
   };
 
   return (
@@ -150,6 +162,11 @@ export default function WelcomeScreen() {
             <Text style={styles.signupButtonText}>Create Account</Text>
           </TouchableOpacity>
         </View>
+        
+        <SocialAuthButtons 
+          onSuccess={handleSocialAuthSuccess}
+          onError={handleSocialAuthError}
+        />
         
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy

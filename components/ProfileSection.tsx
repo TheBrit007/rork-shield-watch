@@ -16,6 +16,20 @@ export const ProfileSection: React.FC = () => {
   const handleLogin = () => {
     router.push('/login');
   };
+
+  // Get auth provider badge text
+  const getAuthProviderBadge = () => {
+    if (!user || !user.authProvider) return null;
+    
+    switch (user.authProvider) {
+      case 'google':
+        return 'Google';
+      case 'apple':
+        return 'Apple';
+      default:
+        return null;
+    }
+  };
   
   if (!isAuthenticated || !user) {
     return (
@@ -54,7 +68,14 @@ export const ProfileSection: React.FC = () => {
             </View>
           )}
           <View style={styles.userInfo}>
-            <Text style={styles.username}>{user.username}</Text>
+            <View style={styles.usernameContainer}>
+              <Text style={styles.username}>{user.username}</Text>
+              {getAuthProviderBadge() && (
+                <View style={styles.providerBadge}>
+                  <Text style={styles.providerBadgeText}>{getAuthProviderBadge()}</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.email}>{user.email}</Text>
           </View>
         </View>
@@ -131,11 +152,27 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
+  usernameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   username: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.text,
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  providerBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  providerBadgeText: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '500',
   },
   email: {
     fontSize: 14,
