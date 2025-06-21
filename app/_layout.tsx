@@ -6,10 +6,15 @@ import { StatusBar } from "expo-status-bar";
 import { View, Text, StyleSheet } from "react-native";
 import { useUserStore } from "@/store/userStore";
 import Colors from "@/constants/colors";
+import { trpc, trpcClient } from "@/lib/trpc";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export const unstable_settings = {
   initialRouteName: "welcome",
 };
+
+// Create a client
+const queryClient = new QueryClient();
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -60,7 +65,13 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <RootLayoutNav />
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
 }
 
 function RootLayoutNav() {
