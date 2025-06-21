@@ -37,7 +37,7 @@ export const signInWithGoogle = async (): Promise<SocialAuthResponse> => {
   try {
     // Configure Google auth request
     const [request, response, promptAsync] = Google.useAuthRequest({
-      expoClientId: GOOGLE_CLIENT_ID_WEB,
+      clientId: GOOGLE_CLIENT_ID_WEB,
       iosClientId: GOOGLE_CLIENT_ID_IOS,
       androidClientId: GOOGLE_CLIENT_ID_ANDROID,
       webClientId: GOOGLE_CLIENT_ID_WEB,
@@ -46,7 +46,7 @@ export const signInWithGoogle = async (): Promise<SocialAuthResponse> => {
     // Prompt user to authenticate
     const result = await promptAsync();
 
-    if (result.type === 'success') {
+    if (result.type === 'success' && result.authentication) {
       // Get user info using the access token
       const userInfoResponse = await fetch(
         'https://www.googleapis.com/userinfo/v2/me',
@@ -107,16 +107,17 @@ export const signInWithApple = async (): Promise<SocialAuthResponse> => {
       success: true,
       userData: {
         id: credential.user,
-        email: credential.email,
+        email: credential.email || undefined,
         name: credential.fullName?.givenName 
           ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
           : undefined,
         provider: 'apple',
       },
     };
-  } catch (error) {
+  } catch (e) {
     // Handle error
-    if (error.code === 'ERR_CANCELED') {
+    const error = e as Error;
+    if ('code' in error && error.code === 'ERR_CANCELED') {
       return {
         success: false,
         error: 'Apple sign in was cancelled',

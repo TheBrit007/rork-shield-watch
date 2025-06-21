@@ -62,7 +62,7 @@ const MOCK_USERS = [
       startDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
     },
     postsThisMonth: 3,
-    authProvider: 'email',
+    authProvider: 'email' as 'email',
   },
   {
     id: '2',
@@ -79,7 +79,7 @@ const MOCK_USERS = [
       paymentMethod: 'Google Pay',
     },
     postsThisMonth: 25,
-    authProvider: 'email',
+    authProvider: 'email' as 'email',
   }
 ];
 
@@ -240,7 +240,7 @@ export const useUserStore = create<UserState>()(
             // and either log them in or create a new account
             
             // For this demo, we'll create a new user
-            const { id, email, name, picture } = response.userData;
+            const { id, email, name, picture, provider } = response.userData;
             
             const newUser: User = {
               id: `google-${id}`,
@@ -280,7 +280,7 @@ export const useUserStore = create<UserState>()(
             // and either log them in or create a new account
             
             // For this demo, we'll create a new user
-            const { id, email, name } = response.userData;
+            const { id, email, name, provider } = response.userData;
             
             const newUser: User = {
               id: `apple-${id}`,
