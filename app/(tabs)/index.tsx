@@ -24,6 +24,7 @@ if (Platform.OS !== 'web') {
     Marker = MapComponents.Marker;
     PROVIDER_GOOGLE = MapComponents.PROVIDER_GOOGLE;
     
+    // Only import MapMarker if we're not on web
     const MapMarkerComponent = require('@/components/MapMarker').MapMarker;
     MapMarker = MapMarkerComponent;
   } catch (error) {
