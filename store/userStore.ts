@@ -346,4 +346,106 @@ export const useUserStore = create<UserState>()(
           let endDate;
           if (tier === 'monthly') {
             endDate = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
-          } else
+          } else if (tier === 'yearly') {
+            endDate = Date.now() + 365 * 24 * 60 * 60 * 1000; // 365 days
+          }
+          
+          // Update user subscription
+          const updatedUser = {
+            ...user,
+            subscription: {
+              tier,
+              startDate: Date.now(),
+              endDate,
+              autoRenew: true,
+              paymentMethod: paymentMethod || 'Credit Card',
+            },
+          };
+          
+          set({ user: updatedUser });
+          
+          return true;
+        } catch (error) {
+          console.error('Subscription upgrade error:', error);
+          return false;
+        }
+      },
+      
+      getRemainingPosts: () => {
+        const { user, isAuthenticated } = get();
+        
+        // If not authenticated, check anonymous posts
+        if (!isAuthenticated) {
+          return get().getRemainingAnonymousPosts();
+        }
+        
+        // If authenticated, check subscription tier
+        if (user) {
+          if (user.subscription.tier === 'monthly' || user.subscription.tier === 'yearly') {
+            return Infinity; // Unlimited posts for premium users
+          } else {
+            return MAX_FREE_POSTS - user.postsThisMonth;
+          }
+        }
+        
+        return 0;
+      },
+      
+      canPost: () => {
+        const { isAuthenticated } = get();
+        
+        // If not authenticated, check anonymous posting
+        if (!isAuthenticated) {
+          return get().canPostAnonymously();
+        }
+        
+        // If authenticated, check remaining posts
+        return get().getRemainingPosts() > 0;
+      },
+      
+      getPostLimit: () => {
+        const { user, isAuthenticated } = get();
+        
+        if (!isAuthenticated) {
+          return MAX_ANONYMOUS_POSTS;
+        }
+        
+        if (user) {
+          if (user.subscription.tier === 'monthly' || user.subscription.tier === 'yearly') {
+            return Infinity;
+          } else {
+            return MAX_FREE_POSTS;
+          }
+        }
+        
+        return 0;
+      },
+      
+      addPost: () => {
+        const { user, isAuthenticated } = get();
+        
+        if (isAuthenticated && user) {
+          // Only increment for free users (premium users have unlimited)
+          if (user.subscription.tier === 'free') {
+            set({
+              user: {
+                ...user,
+                postsThisMonth: user.postsThisMonth + 1,
+              },
+            });
+          }
+        }
+      },
+    }),
+    {
+      name: 'user-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        anonymousPosts: state.anonymousPosts,
+        hasSeenWelcome: state.hasSeenWelcome,
+      }),
+    }
+  )
+);
